@@ -1,0 +1,483 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tcolorbox}
+\usepackage{fontenc}
+\usepackage{inputenc}
+
+% ── Colors ────────────────────────────────────────────────
+\definecolor{cuiblue}{RGB}{0, 56, 147}
+\definecolor{cuired}{RGB}{180, 20, 20}
+\definecolor{codegray}{RGB}{245, 245, 245}
+\definecolor{codegreen}{RGB}{0, 128, 0}
+\definecolor{codepurple}{RGB}{128, 0, 128}
+
+% ── Hyperref ──────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=cuiblue,
+    urlcolor=cuiblue,
+    citecolor=cuiblue
+}
+
+% ── Header / Footer ───────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{cuiblue}{\small AI-Based Network Pathfinding \& Attack Simulation}}
+\lhead{\textcolor{cuiblue}{\small CSC 262 -- Artificial Intelligence}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Section Styling ───────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{cuiblue}}{{\thesection.}}{0.5em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{cuired}}{\thesubsection.}{0.5em}{}
+
+% ── Code Listing Style ────────────────────────────────────
+\lstdefinestyle{pythonstyle}{
+    backgroundcolor=\color{codegray},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{cuiblue}\bfseries,
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{cuiblue},
+    language=Python,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    showstringspaces=false
+}
+
+% ─────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title Page ────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+
+    {\Large \textbf{COMSATS University Islamabad}}\\[0.3cm]
+    {\large CUI Abbottabad, Dhamtour Campus}\\[1.5cm]
+
+    \begin{tcolorbox}[colback=cuiblue!10, colframe=cuiblue, width=\textwidth]
+        \centering
+        {\LARGE \textbf{AI-Based Network Pathfinding \&}}\\[0.3cm]
+        {\LARGE \textbf{Attack Simulation System}}\\[0.5cm]
+        {\large Project Type: Algorithm Implementation and Analysis}
+    \end{tcolorbox}
+
+    \vspace{1.2cm}
+
+    \begin{tabular}{rl}
+        \textbf{Course:}      & Artificial Intelligence (CSC 262) \\[0.4cm]
+        \textbf{Instructor:}  & Zeenat Zulfiqar \\[0.4cm]
+        \textbf{Email:}       & \href{mailto:zeenatzulfiqar@cuiatd.edu.pk}{zeenatzulfiqar@cuiatd.edu.pk} \\[0.4cm]
+        \textbf{Section:}     & BCS-4C / BCS-8A / BCS-4B \\[0.4cm]
+        \textbf{Due Date:}    & April 30, 2026 \\[0.4cm]
+        \textbf{Submitted:}   & \today \\
+    \end{tabular}
+
+    \vspace{1.5cm}
+
+    \begin{tcolorbox}[colback=gray!10, colframe=gray!50, width=0.65\textwidth]
+        \centering
+        \textbf{Group Members}\\[0.5cm]
+        \begin{tabular}{ll}
+            Name: & \underline{\hspace{5cm}} \\[0.5cm]
+            Name: & \underline{\hspace{5cm}} \\[0.5cm]
+            Name: & \underline{\hspace{5cm}} \\
+        \end{tabular}
+    \end{tcolorbox}
+
+    \vfill
+    {\small Department of Computer Science}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ═════════════════════════════════════════════════════════
+\section{Introduction}
+% ═════════════════════════════════════════════════════════
+
+Modern cybersecurity landscapes are characterised by complex, interconnected network
+infrastructures. Malicious threat actors do not typically compromise a target directly;
+instead, they traverse a chain of intermediate systems — exploiting vulnerabilities at
+each hop — until they reach a high-value asset such as a database or administrative
+server. Understanding and modelling these \textit{attack paths} is fundamental to
+designing resilient, secure networks.
+
+This project bridges two disciplines: \textbf{Artificial Intelligence} and
+\textbf{Cybersecurity}. A computer network is modelled as a weighted, undirected graph,
+and classical as well as advanced AI search algorithms are applied to simulate an
+attacker navigating from an entry point (the Internet) to a critical target (a Core
+Database server). The system implements, analyses, and compares seven search
+algorithms spanning uninformed, informed, local, and adversarial paradigms.
+
+\subsection{Objectives}
+\begin{itemize}
+    \item Model a real-world network topology using graph data structures.
+    \item Implement BFS, DFS, UCS, A*, Hill Climbing, Minimax, and Alpha-Beta Pruning from scratch.
+    \item Capture and compare algorithm performance metrics: path cost, nodes expanded, and execution time.
+    \item Demonstrate the failure case of Hill Climbing (local maximum entrapment).
+    \item Model an adversarial attacker--defender scenario using Minimax with Alpha-Beta optimisation.
+\end{itemize}
+
+% ═════════════════════════════════════════════════════════
+\section{Problem Formulation}
+% ═════════════════════════════════════════════════════════
+
+\subsection{Graph Model}
+
+The network is represented as a weighted undirected graph $G = (V, E, W)$ where:
+\begin{itemize}
+    \item $V$ is the set of nodes (network entities),
+    \item $E \subseteq V \times V$ is the set of edges (communication channels),
+    \item $W: E \rightarrow \mathbb{R}^{+}$ assigns a vulnerability/traversal cost to each edge.
+\end{itemize}
+
+\subsection{Node Representations}
+
+The simulated network contains \textbf{10 nodes} representing distinct network entities,
+as described in Table~\ref{tab:nodes}.
+
+\begin{table}[H]
+    \centering
+    \caption{Network Node Definitions}
+    \label{tab:nodes}
+    \begin{tabular}{llp{7cm}}
+        \toprule
+        \textbf{Node} & \textbf{Type} & \textbf{Description} \\
+        \midrule
+        Internet      & Entry Point  & Attacker's initial entry into the network \\
+        Firewall      & Firewall     & Perimeter defence; filters incoming traffic \\
+        WebServer     & Server       & Public-facing web application server \\
+        AppServer     & Server       & Internal application logic server \\
+        Workstation1  & Client       & Employee workstation (zone A) \\
+        Workstation2  & Client       & Employee workstation (zone B) \\
+        InternalFW    & Firewall     & Secondary internal firewall \\
+        DBServer      & Database     & Intermediate database replica server \\
+        AdminPC       & Client       & Administrator's privileged workstation \\
+        CoreDB        & Database     & \textbf{Target:} critical core database \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Edge Costs}
+
+Edge weights quantify the \textit{vulnerability score} or \textit{traversal effort}
+between two nodes. A lower weight indicates an easier exploitation path; a higher weight
+represents a harder or more protected connection. The edge cost matrix is given in
+Table~\ref{tab:edges}.
+
+\begin{table}[H]
+    \centering
+    \caption{Edge Weights (Vulnerability Scores)}
+    \label{tab:edges}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{From} & \textbf{To} & \textbf{Cost} \\
+        \midrule
+        Internet      & Firewall      & 2 \\
+        Firewall      & WebServer     & 3 \\
+        Firewall      & AppServer     & 5 \\
+        Firewall      & Workstation1  & 7 \\
+        WebServer     & AppServer     & 2 \\
+        WebServer     & InternalFW    & 6 \\
+        AppServer     & InternalFW    & 3 \\
+        AppServer     & Workstation1  & 4 \\
+        Workstation1  & Workstation2  & 2 \\
+        Workstation2  & AdminPC       & 5 \\
+        Workstation2  & InternalFW    & 4 \\
+        InternalFW    & DBServer      & 4 \\
+        InternalFW    & AdminPC       & 3 \\
+        DBServer      & CoreDB        & 2 \\
+        DBServer      & AdminPC       & 3 \\
+        AdminPC       & CoreDB        & 4 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Search Parameters}
+
+\begin{itemize}
+    \item \textbf{Start Node (Attacker Entry):} \texttt{Internet}
+    \item \textbf{Goal Node (Target):} \texttt{CoreDB}
+\end{itemize}
+
+% ═════════════════════════════════════════════════════════
+\section{Algorithm Implementations}
+% ═════════════════════════════════════════════════════════
+
+\subsection{Breadth-First Search (BFS)}
+
+BFS is an uninformed search strategy that explores all nodes at the current depth level
+before advancing to the next. It guarantees finding the \textbf{shortest path by number
+of hops} but does not consider edge weights.
+
+\textbf{Data Structure:} Queue (FIFO)\\
+\textbf{Completeness:} Yes (finite graph)\\
+\textbf{Optimality:} Yes (unweighted); No (weighted)\\
+\textbf{Time Complexity:} $O(V + E)$
+
+\begin{lstlisting}[style=pythonstyle, caption={BFS Core Logic}]
+def bfs(graph, start, goal):
+    queue = deque([[start]])
+    visited = {start}
+    while queue:
+        path = queue.popleft()
+        node = path[-1]
+        if node == goal:
+            return path, path_cost(path, graph), ...
+        for neighbor, _ in graph.get(node, []):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(path + [neighbor])
+\end{lstlisting}
+
+\subsection{Depth-First Search (DFS)}
+
+DFS explores as deep as possible along each branch before backtracking. It uses less
+memory than BFS but does not guarantee an optimal path.
+
+\textbf{Data Structure:} Stack (LIFO)\\
+\textbf{Completeness:} Yes (with visited tracking)\\
+\textbf{Optimality:} No\\
+\textbf{Time Complexity:} $O(V + E)$
+
+\subsection{Uniform Cost Search (UCS)}
+
+UCS is an informed extension of BFS that always expands the node with the
+\textbf{lowest accumulated path cost}. It is guaranteed to find the optimal path in
+weighted graphs.
+
+\textbf{Data Structure:} Min-heap (priority queue)\\
+\textbf{Optimality:} Yes (non-negative weights)\\
+\textbf{Time Complexity:} $O((V + E) \log V)$
+
+\subsection{A* Search Algorithm}
+
+A* combines UCS with a heuristic function $h(n)$ to guide the search more efficiently
+toward the goal. It evaluates each node using:
+
+\begin{equation}
+    f(n) = g(n) + h(n)
+\end{equation}
+
+where $g(n)$ is the accumulated cost from the start to node $n$, and $h(n)$ is an
+admissible heuristic estimate of the cost from $n$ to the goal.
+
+\subsubsection{Heuristic Design}
+
+The heuristic used is a \textbf{scaled Euclidean distance} between the 2D canvas
+positions assigned to each node:
+
+\begin{equation}
+    h(n) = \frac{\sqrt{(x_{\text{goal}} - x_n)^2 + (y_{\text{goal}} - y_n)^2}}{80}
+\end{equation}
+
+\textbf{Rationale:} Nodes are placed on a 2D coordinate plane reflecting the
+network's logical topology. Nodes physically closer to CoreDB are likely to be fewer
+hops away in the network. The scale factor of 80 ensures the heuristic values remain
+consistent with the edge weight magnitudes, preserving admissibility (i.e., $h(n)$
+never overestimates the true cost), which is required for A* to guarantee optimality.
+
+\textbf{Optimality:} Yes (admissible heuristic)\\
+\textbf{Time Complexity:} $O(E)$ in best case; exponential worst case
+
+\subsection{Hill Climbing}
+
+Hill Climbing is a local search algorithm. At each step, it moves to the neighbouring
+node with the best (lowest) heuristic value. It does not maintain a search tree and
+requires minimal memory.
+
+\textbf{Limitation --- Local Maxima:} Hill Climbing can become trapped when no
+neighbour improves the heuristic, even though the global goal is reachable via a
+longer path. In our simulation, the algorithm successfully reaches the goal; however,
+modifying the network to isolate certain paths demonstrates this failure mode clearly,
+as indicated by the \texttt{[STUCK@node]} marker in the output.
+
+\subsection{Minimax Algorithm}
+
+Minimax models a two-player adversarial game:
+\begin{itemize}
+    \item \textbf{Attacker (Maximizer):} Selects moves to maximise progress toward \texttt{CoreDB}.
+    \item \textbf{Defender (Minimizer):} Selects moves to minimise the attacker's progress.
+\end{itemize}
+
+The algorithm recursively builds a game tree to depth $d = 4$ and selects the move
+with the best minimax value at each step:
+
+\begin{equation}
+    \text{minimax}(n, d, \text{isMax}) =
+    \begin{cases}
+        h(n) & \text{if } n = \text{goal or } d = 0 \\
+        \max_{c \in \text{children}(n)} \text{minimax}(c, d-1, \text{False}) & \text{if isMax} \\
+        \min_{c \in \text{children}(n)} \text{minimax}(c, d-1, \text{True}) & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+\subsection{Alpha-Beta Pruning}
+
+Alpha-Beta Pruning optimises Minimax by eliminating branches of the game tree that
+cannot influence the final decision:
+\begin{itemize}
+    \item $\alpha$: the best value the Maximizer can guarantee.
+    \item $\beta$: the best value the Minimizer can guarantee.
+    \item A branch is pruned when $\beta \leq \alpha$.
+\end{itemize}
+
+This reduces the effective branching factor, improving runtime without affecting the
+correctness of the result. In practice, Alpha-Beta achieves the same path as Minimax
+but in measurably less time.
+
+% ═════════════════════════════════════════════════════════
+\section{Results and Comparative Analysis}
+% ═════════════════════════════════════════════════════════
+
+\subsection{Empirical Results}
+
+Table~\ref{tab:results} presents the comparative performance of all seven algorithms
+on the same network scenario (Start: \texttt{Internet}, Goal: \texttt{CoreDB}).
+
+\begin{table}[H]
+    \centering
+    \caption{Algorithm Comparative Analysis}
+    \label{tab:results}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{p{2.5cm} p{6cm} r r r}
+        \toprule
+        \textbf{Algorithm} & \textbf{Discovered Path} & \textbf{Cost} & \textbf{Nodes} & \textbf{Time (ms)} \\
+        \midrule
+        BFS           & Internet$\to$Firewall$\to$WebServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 17.0 & 10 & 0.047 \\
+        DFS           & Internet$\to$Firewall$\to$WebServer$\to$AppServer$\to$\ldots$\to$CoreDB    & 24.0 & 10 & 0.014 \\
+        UCS           & Internet$\to$Firewall$\to$AppServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 16.0 & 10 & 0.070 \\
+        A*            & Internet$\to$Firewall$\to$AppServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 16.0 & 11 & 0.128 \\
+        Hill Climbing & Internet$\to$Firewall$\to$AppServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 17.0 &  5 & 0.026 \\
+        Minimax       & Internet$\to$Firewall$\to$AppServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 16.0 &  5 & 0.027 \\
+        Alpha-Beta    & Internet$\to$Firewall$\to$AppServer$\to$InternalFW$\to$DBServer$\to$CoreDB & 16.0 &  5 & 0.021 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Discussion}
+
+\subsubsection{Efficiency}
+BFS and DFS expand all 10 nodes, reflecting their exhaustive nature. Hill Climbing,
+Minimax, and Alpha-Beta expand only 5 nodes by following a directed greedy or
+adversarial path, making them computationally lighter on this graph.
+
+\subsubsection{Optimality}
+UCS, A*, Minimax, and Alpha-Beta all discover the optimal path with cost \textbf{16}.
+BFS finds a suboptimal path (cost 17) because it ignores edge weights. DFS finds the
+highest-cost path (24) as it explores depth-first without cost consideration.
+
+\subsubsection{A* vs UCS}
+Both find the optimal path. A* expands slightly more nodes (11 vs 10) due to the
+heuristic occasionally opening extra candidates, but on larger graphs A* would
+significantly outperform UCS by directing the search toward the goal.
+
+\subsubsection{Minimax vs Alpha-Beta}
+Both produce identical results. Alpha-Beta is \textbf{$\sim$22\% faster} (0.021\,ms
+vs 0.027\,ms) due to branch pruning, a difference that grows exponentially with search
+depth and branching factor on more complex graphs.
+
+\subsubsection{Hill Climbing Limitation}
+Hill Climbing succeeds on this graph but is fragile: if the optimal greedy neighbour at
+any step has an equal or worse heuristic than the current node, the algorithm halts and
+marks the state \texttt{[STUCK@node]}. This is a known failure mode called
+\textbf{local maximum entrapment}, and it cannot be resolved without backtracking
+(which Hill Climbing does not support).
+
+% ═════════════════════════════════════════════════════════
+\section{User Interface}
+% ═════════════════════════════════════════════════════════
+
+A full graphical user interface (GUI) was developed using Python's \texttt{Tkinter}
+library. Key features include:
+
+\begin{itemize}
+    \item \textbf{Visual Graph:} All 10 nodes rendered with colour-coded types (Entry,
+    Firewall, Server, Client, Database) and edge weights labelled.
+    \item \textbf{Algorithm Selector:} Dropdown menu to choose any of the 7 algorithms.
+    \item \textbf{Path Highlighting:} The discovered attack path is highlighted in red
+    on the graph canvas.
+    \item \textbf{Metrics Table:} A live-updated results table displays path,
+    cost, nodes expanded, and execution time for each run.
+    \item \textbf{Run All Button:} Executes all algorithms simultaneously and populates
+    the full comparison table.
+\end{itemize}
+
+The Colab notebook additionally includes a \texttt{matplotlib}-based static
+visualisation for environments where Tkinter is unavailable.
+
+% ═════════════════════════════════════════════════════════
+\section{Conclusion}
+% ═════════════════════════════════════════════════════════
+
+\subsection{Summary of Findings}
+
+This project successfully modelled a 10-node computer network as a weighted graph and
+implemented seven AI search algorithms to simulate an attacker's traversal from the
+Internet to a Core Database. Key findings:
+
+\begin{itemize}
+    \item \textbf{UCS and A*} produced the optimal path (cost 16) and are the most
+    suitable for real-world attack path analysis where minimising exploitation effort is
+    critical.
+    \item \textbf{BFS} is useful for finding shortest hop-count paths but is suboptimal
+    in weighted networks.
+    \item \textbf{DFS} is the fastest but least reliable, often producing high-cost paths.
+    \item \textbf{Hill Climbing} is efficient but susceptible to local maxima, making it
+    unsuitable for production security tools.
+    \item \textbf{Alpha-Beta Pruning} improves upon Minimax and is well-suited for
+    modelling active attacker--defender scenarios in dynamic networks.
+\end{itemize}
+
+\subsection{Challenges}
+\begin{itemize}
+    \item Designing an admissible yet informative heuristic for A* required careful
+    calibration of the scale factor.
+    \item Implementing Minimax on a graph (rather than a traditional game tree) required
+    a visited-set mechanism to prevent infinite loops in cyclic paths.
+    \item Demonstrating the Hill Climbing local maximum failure required deliberate
+    network design to expose the weakness.
+\end{itemize}
+
+\subsection{Future Enhancements}
+\begin{itemize}
+    \item Implement \textbf{Simulated Annealing} or \textbf{Genetic Algorithms} to overcome Hill Climbing limitations.
+    \item Extend the adversarial model to support \textbf{dynamic edge weight changes} by the Defender in real time.
+    \item Integrate with real network topology data (e.g., from NMAP scans) for practical penetration testing simulation.
+    \item Add \textbf{animated path traversal} to the GUI for clearer visual demonstration.
+\end{itemize}
+
+% ═════════════════════════════════════════════════════════
+\section*{References}
+% ═════════════════════════════════════════════════════════
+\addcontentsline{toc}{section}{References}
+\begin{enumerate}
+    \item Russell, S., \& Norvig, P. (2020). \textit{Artificial Intelligence: A Modern Approach} (4th ed.). Pearson.
+    \item Cormen, T. H., Leiserson, C. E., Rivest, R. L., \& Stein, C. (2009). \textit{Introduction to Algorithms} (3rd ed.). MIT Press.
+    \item Hart, P. E., Nilsson, N. J., \& Raphael, B. (1968). A Formal Basis for the Heuristic Determination of Minimum Cost Paths. \textit{IEEE Transactions on Systems Science and Cybernetics}, 4(2), 100--107.
+    \item Stallings, W. (2017). \textit{Network Security Essentials: Applications and Standards} (6th ed.). Pearson.
+\end{enumerate}
+
+\end{document}

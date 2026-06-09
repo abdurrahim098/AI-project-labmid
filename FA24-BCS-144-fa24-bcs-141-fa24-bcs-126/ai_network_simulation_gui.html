@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Network Attack Simulation — CSC 262</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0d14;--surface:#111520;--surface2:#171d2e;--border:#1e2740;
+  --accent:#00d4ff;--accent2:#ff6b35;--green:#00ff9d;--yellow:#ffd700;
+  --text:#e0e8ff;--muted:#5a6890;--red:#ff4444;
+  --font-main:'Syne',sans-serif;--font-mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-height:100vh;overflow-x:hidden}
+header{background:linear-gradient(135deg,#0a0d14 0%,#111a30 100%);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;gap:1.5rem}
+.logo{width:48px;height:48px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+header h1{font-size:1.15rem;font-weight:700;letter-spacing:.5px}
+header p{font-size:.78rem;color:var(--muted);margin-top:2px}
+.badge{background:#1a2a40;border:1px solid var(--accent);color:var(--accent);padding:3px 10px;border-radius:4px;font-size:.7rem;font-family:var(--font-mono);margin-left:auto;white-space:nowrap}
+main{display:grid;grid-template-columns:260px 1fr;gap:0;height:calc(100vh - 65px)}
+aside{background:var(--surface);border-right:1px solid var(--border);padding:1.2rem;overflow-y:auto}
+aside h3{font-size:.7rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.8rem}
+.algo-btn{width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.6rem .9rem;border-radius:6px;margin-bottom:.4rem;cursor:pointer;font-family:var(--font-main);font-size:.82rem;transition:all .18s;display:flex;align-items:center;gap:.6rem}
+.algo-btn:hover{border-color:var(--accent);color:var(--accent)}
+.algo-btn.active{background:#0d2035;border-color:var(--accent);color:var(--accent)}
+.algo-btn .tag{font-size:.65rem;font-family:var(--font-mono);padding:2px 6px;border-radius:3px;margin-left:auto;flex-shrink:0}
+.tag-uninf{background:#1a2040;color:#7090ff}
+.tag-inf{background:#1a2d1a;color:#00ff9d}
+.tag-local{background:#2d2010;color:#ffd700}
+.tag-adv{background:#2d1010;color:#ff6060}
+.content{overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem}
+.network-container{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.network-container h2{font-size:.75rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem}
+canvas#netCanvas{display:block;background:#0d1120;border-radius:8px;width:100%;cursor:crosshair}
+.controls{display:flex;gap:.6rem;margin-top:.8rem;flex-wrap:wrap;align-items:center}
+.ctrl-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.45rem .9rem;border-radius:5px;cursor:pointer;font-family:var(--font-main);font-size:.78rem;transition:all .15s}
+.ctrl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ctrl-btn.run{background:#0d2035;border-color:var(--accent);color:var(--accent)}
+.ctrl-btn.run:hover{background:var(--accent);color:#000;font-weight:600}
+.speed-label{font-size:.72rem;color:var(--muted);margin-left:.5rem}
+#speedSlider{accent-color:var(--accent);width:80px}
+.results-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem;text-align:center}
+.metric-card .label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem}
+.metric-card .val{font-size:1.5rem;font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+.metric-card .sub{font-size:.7rem;color:var(--muted);margin-top:.15rem}
+.path-display{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.path-display h3{font-size:.72rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.7rem}
+.path-nodes{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.path-node{background:#0d2035;border:1px solid var(--accent);color:var(--accent);padding:.3rem .7rem;border-radius:4px;font-size:.75rem;font-family:var(--font-mono)}
+.path-arrow{color:var(--muted);font-size:1rem}
+.comparison-table{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.comparison-table h3{font-size:.72rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:.9rem 1rem .5rem;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface2);padding:.55rem .9rem;font-size:.7rem;color:var(--muted);text-align:left;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+td{padding:.55rem .9rem;font-size:.78rem;border-top:1px solid var(--border);font-family:var(--font-mono)}
+tr:hover td{background:#111d30}
+.optimal{color:var(--green)}
+.log-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.log-panel h3{font-size:.72rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.6rem}
+#logOutput{font-family:var(--font-mono);font-size:.72rem;line-height:1.7;color:#8090b0;max-height:130px;overflow-y:auto;background:#090c14;padding:.7rem;border-radius:5px;border:1px solid var(--border)}
+#logOutput .log-info{color:var(--accent)}
+#logOutput .log-ok{color:var(--green)}
+#logOutput .log-warn{color:var(--yellow)}
+#logOutput .log-err{color:var(--red)}
+.running-algo{color:var(--yellow);font-size:.78rem;font-family:var(--font-mono);display:none;padding:.4rem .8rem;background:#1a1500;border:1px solid var(--yellow);border-radius:5px}
+.minimax-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.minimax-panel h3{font-size:.72rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.7rem}
+.mm-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.mm-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.8rem}
+.mm-card h4{font-size:.7rem;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem}
+.mm-card .val2{font-size:1.1rem;font-family:var(--font-mono);font-weight:600}
+.hill-note{background:#1a1400;border:1px solid var(--yellow);border-radius:6px;padding:.7rem;font-size:.75rem;color:var(--yellow);margin-top:.5rem;display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🛡️</div>
+  <div>
+    <h1>AI-Based Network Pathfinding & Attack Simulation</h1>
+    <p>CSC 262 — Artificial Intelligence | COMSATS University Islamabad | Instructor: Zeenat Zulfiqar</p>
+  </div>
+  <div class="badge">BCS-4C / BCS-8A / BCS-4B</div>
+</header>
+<main>
+<aside>
+  <h3>Search Algorithms</h3>
+  <button class="algo-btn active" onclick="selectAlgo('bfs')" id="btn-bfs">
+    🔵 BFS <span class="tag tag-uninf">Uninformed</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('dfs')" id="btn-dfs">
+    🟣 DFS <span class="tag tag-uninf">Uninformed</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('ucs')" id="btn-ucs">
+    🟢 UCS <span class="tag tag-inf">Informed</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('astar')" id="btn-astar">
+    ⭐ A* <span class="tag tag-inf">Informed</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('hill')" id="btn-hill">
+    ⛰️ Hill Climbing <span class="tag tag-local">Local</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('minimax')" id="btn-minimax">
+    ♟️ Minimax <span class="tag tag-adv">Adversarial</span>
+  </button>
+  <button class="algo-btn" onclick="selectAlgo('ab')" id="btn-ab">
+    ✂️ Alpha-Beta <span class="tag tag-adv">Adversarial</span>
+  </button>
+
+  <div style="margin-top:1.5rem">
+    <h3>Legend</h3>
+    <div style="font-size:.72rem;line-height:2">
+      <span style="color:#00ff9d">●</span> Start Node (Attacker)<br>
+      <span style="color:#ff4444">●</span> Goal Node (Target)<br>
+      <span style="color:#7090ff">●</span> Regular Node<br>
+      <span style="color:#00d4ff">●</span> Path Node<br>
+      <span style="color:#ffd700">●</span> Current Node (Exploring)
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    <h3>Network Info</h3>
+    <div style="font-size:.72rem;line-height:2;font-family:var(--font-mono);color:var(--muted)">
+      Nodes: 10<br>
+      Edges: 16<br>
+      Start: Node 0<br>
+      Goal: Node 9<br>
+      Weights: Vulnerability
+    </div>
+  </div>
+</aside>
+
+<div class="content">
+  <div class="network-container">
+    <h2>🌐 Network Topology Visualization</h2>
+    <canvas id="netCanvas" width="800" height="280"></canvas>
+    <div class="controls">
+      <button class="ctrl-btn run" onclick="runAlgorithm()">▶ Run Algorithm</button>
+      <button class="ctrl-btn" onclick="runAll()">⚡ Run All</button>
+      <button class="ctrl-btn" onclick="resetViz()">↺ Reset</button>
+      <span class="speed-label">Speed:</span>
+      <input type="range" id="speedSlider" min="1" max="10" value="5">
+      <span id="runningLabel" class="running-algo">Running...</span>
+    </div>
+  </div>
+
+  <div class="results-grid">
+    <div class="metric-card">
+      <div class="label">Algorithm</div>
+      <div class="val" id="m-algo" style="font-size:1rem">—</div>
+      <div class="sub" id="m-algo-type">Select an algorithm</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Total Cost</div>
+      <div class="val" id="m-cost">—</div>
+      <div class="sub">Vulnerability score</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Nodes Expanded</div>
+      <div class="val" id="m-nodes">—</div>
+      <div class="sub">Nodes explored</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Time (ms)</div>
+      <div class="val" id="m-time">—</div>
+      <div class="sub">Execution time</div>
+    </div>
+  </div>
+
+  <div class="path-display">
+    <h3>🔴 Discovered Attack Path</h3>
+    <div id="pathDisplay" class="path-nodes" style="color:var(--muted);font-size:.8rem">Run an algorithm to see the discovered path</div>
+  </div>
+
+  <div id="hillNote" class="hill-note">
+    ⚠️ <b>Local Maxima Demo:</b> Hill Climbing always moves greedily to the best neighbor. On networks with dead-ends, it can get STUCK and fail to reach the goal — this is the fundamental limitation of local search algorithms.
+  </div>
+
+  <div id="minimaxPanel" class="minimax-panel" style="display:none">
+    <h3>♟️ Minimax vs Alpha-Beta Pruning</h3>
+    <div class="mm-grid">
+      <div class="mm-card">
+        <h4>Minimax (Plain)</h4>
+        <div class="val2" id="mm-time" style="color:#ff6060">—</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Execution time</div>
+        <div class="val2" id="mm-nodes" style="color:#ff6060;margin-top:.5rem">—</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Nodes visited</div>
+      </div>
+      <div class="mm-card">
+        <h4>Alpha-Beta Pruning</h4>
+        <div class="val2" id="ab-time" style="color:var(--green)">—</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Execution time</div>
+        <div class="val2" id="ab-nodes" style="color:var(--green);margin-top:.5rem">—</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Nodes visited</div>
+        <div style="font-size:.72rem;color:var(--yellow);margin-top:.5rem" id="ab-speedup"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="comparison-table">
+    <h3>📊 Comparative Analysis</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Algorithm</th>
+          <th>Path</th>
+          <th>Total Cost</th>
+          <th>Nodes Exp.</th>
+          <th>Time (ms)</th>
+          <th>Optimal?</th>
+        </tr>
+      </thead>
+      <tbody id="compTable">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">Run algorithms to populate the comparison table</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="log-panel">
+    <h3>📟 Algorithm Log</h3>
+    <div id="logOutput"><span class="log-info">[SYSTEM] AI Network Attack Simulation initialized.</span><br><span class="log-info">[SYSTEM] Select an algorithm and press Run.</span><br></div>
+  </div>
+</div>
+</main>
+
+<script>
+// ============================================================
+// NETWORK DATA
+// ============================================================
+const NODE_LABELS = {
+  0:'Attacker Entry', 1:'Workstation-A', 2:'Workstation-B', 3:'Workstation-C',
+  4:'Firewall-1', 5:'Firewall-2', 6:'Web Server', 7:'App Server',
+  8:'Internal DB', 9:'TARGET'
+};
+const EDGES = [
+  [0,1,2],[0,2,4],[0,3,6],[1,4,3],[2,4,2],[3,5,3],[4,6,5],[4,7,7],
+  [5,7,4],[6,8,3],[7,8,2],[7,9,8],[8,9,3],[1,2,1],[5,6,6],[3,1,2]
+];
+const START=0, GOAL=9;
+
+// Node positions on canvas (x,y) — 800x280 canvas
+const NODE_POS = {
+  0:[60,140], 1:[190,60], 2:[190,140], 3:[190,220],
+  4:[340,60], 5:[340,220], 6:[490,60], 7:[490,180],
+  8:[630,110], 9:[740,140]
+};
+const NODE_COORDS = {
+  0:[0,5], 1:[2,7], 2:[2,5], 3:[2,3], 4:[4,7],
+  5:[4,3], 6:[6,7], 7:[6,4], 8:[8,6], 9:[10,5]
+};
+
+function buildGraph(){
+  const g={};
+  EDGES.forEach(([u,v,w])=>{
+    (g[u]=g[u]||[]).push([v,w]);
+    (g[v]=g[v]||[]).push([u,w]);
+  });
+  return g;
+}
+const GRAPH = buildGraph();
+
+function h(n, goal=GOAL){
+  const [x1,y1]=NODE_COORDS[n], [x2,y2]=NODE_COORDS[goal];
+  return Math.sqrt((x2-x1)**2+(y2-y1)**2);
+}
+
+// ============================================================
+// ALGORITHMS
+// ============================================================
+function bfs(){
+  const t0=performance.now();
+  const visited=new Set(), queue=[[START,[START],0]];
+  let ne=0;
+  while(queue.length){
+    const [node,path,cost]=queue.shift();
+    if(visited.has(node)) continue;
+    visited.add(node); ne++;
+    if(node===GOAL) return {path,cost,ne,ms:(performance.now()-t0).toFixed(4)};
+    for(const [nb,w] of (GRAPH[node]||[])){
+      if(!visited.has(nb)) queue.push([nb,[...path,nb],cost+w]);
+    }
+  }
+  return null;
+}
+
+function dfs(){
+  const t0=performance.now();
+  const visited=new Set(), stack=[[START,[START],0]];
+  let ne=0;
+  while(stack.length){
+    const [node,path,cost]=stack.pop();
+    if(visited.has(node)) continue;
+    visited.add(node); ne++;
+    if(node===GOAL) return {path,cost,ne,ms:(performance.now()-t0).toFixed(4)};
+    for(const [nb,w] of (GRAPH[node]||[])){
+      if(!visited.has(nb)) stack.push([nb,[...path,nb],cost+w]);
+    }
+  }
+  return null;
+}
+
+function ucs(){
+  const t0=performance.now();
+  const heap=[[0,START,[START]]], visited={};
+  let ne=0;
+  while(heap.length){
+    heap.sort((a,b)=>a[0]-b[0]);
+    const [cost,node,path]=heap.shift();
+    if(visited[node]!==undefined && visited[node]<=cost) continue;
+    visited[node]=cost; ne++;
+    if(node===GOAL) return {path,cost,ne,ms:(performance.now()-t0).toFixed(4)};
+    for(const [nb,w] of (GRAPH[node]||[])){
+      const nc=cost+w;
+      if(visited[nb]===undefined||visited[nb]>nc) heap.push([nc,nb,[...path,nb]]);
+    }
+  }
+  return null;
+}
+
+function astar(){
+  const t0=performance.now();
+  const heap=[[h(START),0,START,[START]]], visited={};
+  let ne=0;
+  while(heap.length){
+    heap.sort((a,b)=>a[0]-b[0]);
+    const [f,g,node,path]=heap.shift();
+    if(visited[node]!==undefined) continue;
+    visited[node]=g; ne++;
+    if(node===GOAL) return {path,cost:g,ne,ms:(performance.now()-t0).toFixed(4)};
+    for(const [nb,w] of (GRAPH[node]||[])){
+      if(visited[nb]===undefined){
+        const ng=g+w;
+        heap.push([ng+h(nb),ng,nb,[...path,nb]]);
+      }
+    }
+  }
+  return null;
+}
+
+function hillClimbing(){
+  const t0=performance.now();
+  let cur=START, path=[START], cost=0, ne=0;
+  const visited=new Set([START]);
+  while(cur!==GOAL){
+    ne++;
+    const neighbors=(GRAPH[cur]||[]).filter(([nb])=>!visited.has(nb));
+    if(!neighbors.length) return {path,cost,ne,ms:(performance.now()-t0).toFixed(4),stuck:true};
+    const best=neighbors.reduce((a,b)=>h(a[0])<h(b[0])?a:b);
+    if(h(best[0])>=h(cur)) return {path,cost,ne,ms:(performance.now()-t0).toFixed(4),stuck:true};
+    visited.add(best[0]); path.push(best[0]); cost+=best[1]; cur=best[0];
+  }
+  return {path,cost,ne,ms:(performance.now()-t0).toFixed(4),stuck:false};
+}
+
+function minimaxEval(pos, secured){
+  if(pos===GOAL) return 100;
+  if(secured.has(pos)) return -50;
+  return -h(pos)*10;
+}
+
+function minimaxFn(pos, depth, isMax, secured, alpha, beta, useAB, counter){
+  counter.n++;
+  if(depth===0||pos===GOAL) return [minimaxEval(pos,secured),pos];
+  const neighbors=(GRAPH[pos]||[]).map(([n])=>n).filter(n=>!secured.has(n));
+  if(!neighbors.length) return [minimaxEval(pos,secured),pos];
+  if(isMax){
+    let mx=-Infinity, bm=pos;
+    for(const nb of neighbors){
+      const [v]=minimaxFn(nb,depth-1,false,secured,alpha,beta,useAB,counter);
+      if(v>mx){mx=v;bm=nb;}
+      if(useAB){alpha=Math.max(alpha,v);if(beta<=alpha) break;}
+    }
+    return [mx,bm];
+  } else {
+    let mn=Infinity, bb=null;
+    const all=Object.keys(GRAPH).map(Number).filter(n=>!secured.has(n)&&n!==pos).slice(0,5);
+    if(!all.length) return [minimaxEval(pos,secured),pos];
+    for(const bn of all){
+      const ns=new Set([...secured,bn]);
+      const [v]=minimaxFn(pos,depth-1,true,ns,alpha,beta,useAB,counter);
+      if(v<mn){mn=v;bb=bn;}
+      if(useAB){beta=Math.min(beta,v);if(beta<=alpha) break;}
+    }
+    return [mn,bb];
+  }
+}
+
+function runMinimax(){
+  const t0=performance.now(); const c1={n:0};
+  const [v1,m1]=minimaxFn(START,3,true,new Set(),-Infinity,Infinity,false,c1);
+  const t1=(performance.now()-t0).toFixed(4);
+  const t0b=performance.now(); const c2={n:0};
+  const [v2,m2]=minimaxFn(START,3,true,new Set(),-Infinity,Infinity,true,c2);
+  const t2=(performance.now()-t0b).toFixed(4);
+  return {mm:{val:v1,move:m1,time:t1,nodes:c1.n},ab:{val:v2,move:m2,time:t2,nodes:c2.n}};
+}
+
+// ============================================================
+// CANVAS VISUALIZATION
+// ============================================================
+const canvas=document.getElementById('netCanvas');
+const ctx=canvas.getContext('2d');
+let currentPath=[], highlightNodes=new Set(), exploredNodes=new Set();
+
+function scalePos(p){
+  const scale=canvas.width/800;
+  return [p[0]*scale, p[1]*(canvas.height/280)];
+}
+
+function drawNetwork(pathNodes=[], exploring=null){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // Draw edges
+  EDGES.forEach(([u,v,w])=>{
+    const [x1,y1]=scalePos(NODE_POS[u]);
+    const [x2,y2]=scalePos(NODE_POS[v]);
+    const onPath=pathNodes.includes(u)&&pathNodes.includes(v)&&
+      Math.abs(pathNodes.indexOf(u)-pathNodes.indexOf(v))===1;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    if(onPath){ctx.strokeStyle='#00d4ff';ctx.lineWidth=2.5;ctx.shadowBlur=8;ctx.shadowColor='#00d4ff';}
+    else{ctx.strokeStyle='#1e2740';ctx.lineWidth=1.5;ctx.shadowBlur=0;}
+    ctx.stroke();ctx.shadowBlur=0;
+    // Weight label
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    ctx.fillStyle=onPath?'#00d4ff':'#3a4a70';
+    ctx.font=`bold ${Math.round(canvas.width/70)}px JetBrains Mono`;
+    ctx.textAlign='center'; ctx.fillText(w,mx,my);
+  });
+  // Draw nodes
+  for(let n=0;n<10;n++){
+    const [x,y]=scalePos(NODE_POS[n]);
+    const r=n===START||n===GOAL ? canvas.width/26 : canvas.width/30;
+    let fill='#1a2550', stroke='#2a3870', glow='';
+    if(n===START){fill='#0d2a1a';stroke='#00ff9d';glow='#00ff9d';}
+    else if(n===GOAL){fill='#2a0d0d';stroke='#ff4444';glow='#ff4444';}
+    else if(n===exploring){fill='#2a2200';stroke='#ffd700';glow='#ffd700';}
+    else if(pathNodes.includes(n)){fill='#0d2040';stroke='#00d4ff';glow='#00d4ff';}
+    else if(exploredNodes.has(n)){fill='#1a1a30';stroke='#5a4a80';}
+    if(glow){ctx.shadowBlur=15;ctx.shadowColor=glow;}
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=fill; ctx.fill();
+    ctx.strokeStyle=stroke; ctx.lineWidth=1.8; ctx.stroke();
+    ctx.shadowBlur=0;
+    // Node label
+    const fs=Math.round(canvas.width/65);
+    ctx.font=`600 ${fs}px Syne`;
+    ctx.fillStyle=n===START?'#00ff9d':n===GOAL?'#ff4444':n===exploring?'#ffd700':pathNodes.includes(n)?'#00d4ff':'#7090c0';
+    ctx.textAlign='center';
+    ctx.fillText(n===9?'TARGET':NODE_LABELS[n].replace('Attacker ','').replace('-',''),x,y+r+fs+2);
+    ctx.font=`bold ${fs}px JetBrains Mono`;
+    ctx.fillStyle='#fff';
+    ctx.fillText(n,x,y+3);
+  }
+}
+
+drawNetwork();
+
+// ============================================================
+// ALGORITHM RUNNER WITH ANIMATION
+// ============================================================
+let currentAlgo='bfs';
+const compData={};
+
+function selectAlgo(algo){
+  currentAlgo=algo;
+  document.querySelectorAll('.algo-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+algo).classList.add('active');
+  document.getElementById('hillNote').style.display=algo==='hill'?'block':'none';
+  document.getElementById('minimaxPanel').style.display=(algo==='minimax'||algo==='ab')?'flex':'none';
+  document.getElementById('minimaxPanel').style.flexDirection='column';
+}
+
+function log(msg, type=''){
+  const el=document.getElementById('logOutput');
+  el.innerHTML+=`<span class="${type?'log-'+type:''}">${msg}</span><br>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+function resetViz(){
+  currentPath=[];exploredNodes=new Set();
+  drawNetwork();
+  log('[SYSTEM] Visualization reset.','info');
+}
+
+function updateMetrics(algo, cost, ne, ms, stuck){
+  document.getElementById('m-algo').textContent=algo.toUpperCase();
+  document.getElementById('m-algo-type').textContent=stuck?'⚠️ STUCK (Local Maxima)':'';
+  document.getElementById('m-cost').textContent=cost;
+  document.getElementById('m-cost').style.color=(cost===16)?'#00ff9d':'#00d4ff';
+  document.getElementById('m-nodes').textContent=ne;
+  document.getElementById('m-time').textContent=ms;
+}
+
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function animatePath(path){
+  const speed=11-parseInt(document.getElementById('speedSlider').value);
+  for(let i=0;i<path.length;i++){
+    exploredNodes.add(path[i]);
+    drawNetwork(path.slice(0,i+1), i<path.length-1?path[i]:null);
+    await sleep(speed*60);
+  }
+  drawNetwork(path);
+}
+
+function showPath(path){
+  const el=document.getElementById('pathDisplay');
+  el.innerHTML='';
+  path.forEach((n,i)=>{
+    const span=document.createElement('span');
+    span.className='path-node';
+    span.textContent=`${n}: ${NODE_LABELS[n]}`;
+    el.appendChild(span);
+    if(i<path.length-1){
+      const arr=document.createElement('span');
+      arr.className='path-arrow'; arr.textContent='→';
+      el.appendChild(arr);
+    }
+  });
+}
+
+function updateTable(){
+  const algos=['BFS','DFS','UCS','A*','Hill'];
+  const optimal=16;
+  let html='';
+  if(Object.keys(compData).length===0){
+    html='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem">Run algorithms to populate the comparison table</td></tr>';
+  } else {
+    algos.forEach(a=>{
+      if(!compData[a]) return;
+      const d=compData[a];
+      const isOpt=d.cost===optimal;
+      html+=`<tr>
+        <td style="color:${a==='UCS'||a==='A*'?'#00d4ff':'var(--text)'}">${a}</td>
+        <td>${JSON.stringify(d.path)}</td>
+        <td class="${isOpt?'optimal':''}">${d.cost}</td>
+        <td>${d.ne}</td>
+        <td>${d.ms}</td>
+        <td>${isOpt?'<span style="color:#00ff9d">✓ Yes</span>':'<span style="color:#ff6060">✗ No</span>'}</td>
+      </tr>`;
+    });
+  }
+  document.getElementById('compTable').innerHTML=html;
+}
+
+async function runAlgorithm(){
+  const algo=currentAlgo;
+  const lbl=document.getElementById('runningLabel');
+  lbl.style.display='inline-block';
+  log(`[RUN] Executing ${algo.toUpperCase()} from Node 0 → Node 9...`,'info');
+  exploredNodes=new Set();
+  await sleep(100);
+
+  if(algo==='minimax'||algo==='ab'){
+    const r=runMinimax();
+    document.getElementById('mm-time').textContent=r.mm.time+' ms';
+    document.getElementById('mm-nodes').textContent=r.mm.nodes+' nodes';
+    document.getElementById('ab-time').textContent=r.ab.time+' ms';
+    document.getElementById('ab-nodes').textContent=r.ab.nodes+' nodes';
+    const speedup=(r.mm.time/r.ab.time).toFixed(2);
+    document.getElementById('ab-speedup').textContent=`⚡ ${speedup}x faster | ${r.mm.nodes-r.ab.nodes} nodes pruned`;
+    log(`[MINIMAX] Best move from start: ${NODE_LABELS[r.mm.move]} (score=${r.mm.val})  Time: ${r.mm.time}ms`,'ok');
+    log(`[ALPHA-BETA] Best move: ${NODE_LABELS[r.ab.move]}  Time: ${r.ab.time}ms  Pruned: ${r.mm.nodes-r.ab.nodes} nodes`,'ok');
+    lbl.style.display='none'; return;
+  }
+
+  let res;
+  if(algo==='bfs') res=bfs();
+  else if(algo==='dfs') res=dfs();
+  else if(algo==='ucs') res=ucs();
+  else if(algo==='astar') res=astar();
+  else if(algo==='hill') res=hillClimbing();
+
+  if(!res){log('[ERROR] No path found!','err');lbl.style.display='none';return;}
+  const stuck=res.stuck||false;
+  currentPath=res.path;
+  updateMetrics(algo,res.cost,res.ne,res.ms,stuck);
+  showPath(res.path);
+  if(stuck) log(`[HILL] ⚠️ STUCK at local maxima! Path: ${JSON.stringify(res.path)}`,'warn');
+  else log(`[${algo.toUpperCase()}] Path: ${JSON.stringify(res.path)} | Cost:${res.cost} | Nodes:${res.ne} | ${res.ms}ms`,'ok');
+  const algoKey=algo==='astar'?'A*':algo.toUpperCase().replace('ING','').replace('CLIMBI','').trim();
+  const keyMap={BFS:'BFS',DFS:'DFS',UCS:'UCS','A*':'A*',HILL:'Hill',HILLCLIMB:'Hill'};
+  const k=algo==='astar'?'A*':algo==='hill'?'Hill':algo.toUpperCase();
+  compData[k]={path:res.path,cost:res.cost,ne:res.ne,ms:res.ms};
+  updateTable();
+  await animatePath(res.path);
+  lbl.style.display='none';
+}
+
+async function runAll(){
+  const algos=[['bfs','BFS'],['dfs','DFS'],['ucs','UCS'],['astar','A*'],['hill','Hill']];
+  for(const [a,k] of algos){
+    currentAlgo=a;
+    selectAlgo(a);
+    await sleep(200);
+    await runAlgorithm();
+    await sleep(600);
+  }
+  currentAlgo='bfs'; selectAlgo('bfs');
+}
+
+// Resize canvas properly
+function resizeCanvas(){
+  const container=canvas.parentElement;
+  const w=container.clientWidth-32;
+  canvas.width=w; canvas.height=Math.round(w*(280/800));
+  drawNetwork(currentPath);
+}
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+</script>
+</body>
+</html>
